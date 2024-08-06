@@ -80,9 +80,7 @@ private fun AppScreen(modifier: Modifier = Modifier, viewModel: AppViewModel = A
       onSearchChange = { search = it },
       onSubmit = {
         isSearched = true
-        coroutineScope.launch {
-
-          AppViewModel().searchPatents(search)
+        coroutineScope.launch { patents = AppViewModel().searchPatents(search).toMutableList()
         }
       })
 
@@ -91,7 +89,7 @@ private fun AppScreen(modifier: Modifier = Modifier, viewModel: AppViewModel = A
       search,
       onSearchChange = { search = it },
       onSubmit = {
-        coroutineScope.launch { AppViewModel().searchPatents(search) }
+        coroutineScope.launch { patents = AppViewModel().searchPatents(search).toMutableList() }
       },
       onBack = {
         isSearched = false

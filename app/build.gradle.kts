@@ -1,6 +1,10 @@
+import org.jetbrains.kotlin.ir.backend.js.deserializeDependencies
+
 plugins {
   alias(libs.plugins.android.application)
   alias(libs.plugins.jetbrains.kotlin.android)
+  alias(libs.plugins.compose.compiler)
+   kotlin("plugin.serialization") version "1.8.22"
 }
 
 android {
@@ -48,7 +52,13 @@ android {
 }
 
 dependencies {
-  implementation(libs.ktor.client.okhttp)
+  implementation(libs.ktor.serialization.kotlinx.json)
+  implementation(libs.kotlinx.serialization.json)
+  implementation(libs.ktor.ktor.client.content.negotiation)
+  implementation(libs.ktor.client.android)
+  implementation(libs.ktor.client.json)
+  implementation(libs.ktor.client.serialization)
+  implementation(libs.ktor.client.logging)
   implementation(libs.accompanist.systemuicontroller)
   implementation(libs.androidx.core.splashscreen)
   implementation(libs.androidx.core.ktx)
@@ -67,4 +77,5 @@ dependencies {
   androidTestImplementation(libs.androidx.ui.test.junit4)
   debugImplementation(libs.androidx.ui.tooling)
   debugImplementation(libs.androidx.ui.test.manifest)
+
 }
