@@ -1,5 +1,6 @@
 package com.example.rospatent
 
+import android.support.v4.os.IResultReceiver._Parcel
 import android.util.Log
 import androidx.lifecycle.ViewModel
 import io.ktor.client.HttpClient
@@ -14,11 +15,22 @@ import io.ktor.http.contentType
 import io.ktor.serialization.kotlinx.json.*
 import io.ktor.util.InternalAPI
 import io.ktor.client.*
+import kotlinx.coroutines.flow.MutableStateFlow
+import kotlinx.coroutines.flow.emptyFlow
 import kotlinx.serialization.json.Json
 
 const val token = "26a213594e7f4f6e8cd89064d885ea93"
 
 class AppViewModel : ViewModel() {
+
+  private var _patents: List<Patent> = emptyList()
+
+
+  val patents: List<Patent>
+    get() {
+      return _patents
+    }
+
   private val client = HttpClient() {
     install(ContentNegotiation) {
       json(Json {
@@ -28,14 +40,17 @@ class AppViewModel : ViewModel() {
   }
   private val url = "https://searchplatform.rospatent.gov.ru/patsearch/v0.2/"
 
+  fun clearPatents() {
+    _patents = emptyList()
+  }
 
   @OptIn(InternalAPI::class)
-  suspend fun searchPatents(q: String = "", lang: String = ""): List<Patent> {
+  suspend fun searchPatents(q: String = "", lang: String = "") {
 
 
     val json = """
     {
-    "q": "$q"
+    "qn": "$q"
     ${
       if (lang != "") {
         ",lang: \"$lang\""
@@ -74,6 +89,6 @@ class AppViewModel : ViewModel() {
     }
     // Log.d("PATENTS", patents.toString())
 
-    return patents
+    _patents = patents
   }
 }

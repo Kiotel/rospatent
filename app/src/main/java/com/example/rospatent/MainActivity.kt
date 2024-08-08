@@ -28,6 +28,7 @@ import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextFieldColors
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.State
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
@@ -50,6 +51,7 @@ import androidx.core.view.WindowCompat
 import com.example.rospatent.ui.theme.RospatentTheme
 import kotlinx.coroutines.launch
 import java.security.Permissions
+import kotlin.math.log
 
 class MainActivity : ComponentActivity() {
   override fun onCreate(savedInstanceState: Bundle?) {
@@ -61,7 +63,7 @@ class MainActivity : ComponentActivity() {
     setContent {
       RospatentTheme {
         Scaffold { innerPadding ->
-          AppScreen(modifier = Modifier.padding(innerPadding))
+          AppScreen(modifier = Modifier.padding(innerPadding), viewModel = AppViewModel())
         }
       }
     }
@@ -79,8 +81,9 @@ private fun AppScreen(modifier: Modifier = Modifier, viewModel: AppViewModel = A
       search,
       onSearchChange = { search = it },
       onSubmit = {
-        isSearched = true
-        coroutineScope.launch { patents = AppViewModel().searchPatents(search).toMutableList()
+        coroutineScope.launch {
+          viewModel.searchPatents(search)
+          isSearched = true
         }
       })
 
@@ -89,12 +92,18 @@ private fun AppScreen(modifier: Modifier = Modifier, viewModel: AppViewModel = A
       search,
       onSearchChange = { search = it },
       onSubmit = {
-        coroutineScope.launch { patents = AppViewModel().searchPatents(search).toMutableList() }
+        coroutineScope.launch {
+          viewModel.searchPatents(search)
+          isSearched = false
+          isSearched = true
+        }
+
       },
       onBack = {
         isSearched = false
         search = ""
-      }
+      },
+      patents = viewModel.patents
     )
   }
 }

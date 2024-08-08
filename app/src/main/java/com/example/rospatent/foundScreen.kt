@@ -157,6 +157,7 @@ fun FoundScreen(
   onSearchChange: (String) -> Unit,
   onBack: () -> Unit,
   onSubmit: () -> Unit,
+  patents: List<Patent>,
 ) {
   var isSettings by rememberSaveable { mutableStateOf(false) }
   var isChosenPatent by rememberSaveable { mutableStateOf(false) }
@@ -169,7 +170,8 @@ fun FoundScreen(
     when (isChosenPatent) {
       false,
       -> {
-        PatentsList(search = search,
+        PatentsList(
+          search = search,
           onSearchChange = onSearchChange,
           isSettings = isSettings,
           onSettingsChange = { isSettings = it },
@@ -178,7 +180,9 @@ fun FoundScreen(
             isChosenPatent = true
           },
           onBack = onBack,
-          onSubmit = { onSubmit() })
+          onSubmit = { onSubmit() },
+          patents = patents
+        )
       }
 
       true -> {
@@ -313,6 +317,7 @@ fun PatentsList(
   onPatentChose: (Patent) -> Unit,
   onBack: () -> Unit,
   onSubmit: () -> Unit,
+  patents: List<Patent>,
 ) {
   Icon(modifier = Modifier
     .clickable { onBack() }
@@ -410,7 +415,7 @@ fun PatentResult(modifier: Modifier = Modifier, patent: Patent, onBack: () -> Un
     imageVector = Icons.AutoMirrored.Outlined.KeyboardArrowLeft,
     contentDescription = "back",
     tint = Color.Black)
-  Column(modifier = modifier) { // TODO: СДЕЛАТЬ СТОЛБИКИ НОРМАЛЬНО
+  Column(modifier = modifier.verticalScroll(rememberScrollState())) { // TODO: СДЕЛАТЬ СТОЛБИКИ НОРМАЛЬНО
     Text(
       "Авторы: ${patent.snippet.inventor}"
     )
@@ -449,29 +454,9 @@ fun PatentResult(modifier: Modifier = Modifier, patent: Patent, onBack: () -> Un
     Column {
       Text(text = "Описание")
       Text(
-        modifier = Modifier.verticalScroll(rememberScrollState()),
         text = patent.snippet.description
       )
     }
   }
 }
 
-var patents = mutableListOf(
-  Patent(),
-  Patent(),
-  Patent(),
-  Patent(),
-  Patent(),
-  Patent(),
-  Patent(),
-  Patent(),
-  Patent(),
-  Patent(),
-  Patent(),
-  Patent(),
-  Patent(),
-  Patent(),
-  Patent(),
-  Patent(),
-  Patent(),
-)
