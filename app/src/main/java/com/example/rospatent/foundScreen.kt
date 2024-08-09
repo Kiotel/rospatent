@@ -25,6 +25,7 @@ import androidx.compose.material.icons.outlined.Clear
 import androidx.compose.material.icons.outlined.KeyboardArrowDown
 import androidx.compose.material.icons.outlined.KeyboardArrowUp
 import androidx.compose.material.icons.outlined.Settings
+import androidx.compose.material3.Button
 import androidx.compose.material3.Card
 import androidx.compose.material3.DropdownMenu
 import androidx.compose.material3.DropdownMenuItem
@@ -47,107 +48,7 @@ import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.em
 import androidx.compose.ui.window.Dialog
-import kotlinx.serialization.SerialName
-import kotlinx.serialization.Serializable
-
-@Serializable
-data class RosPatentResponse(
-  val total: Int = 0,
-  val available: Int = 0,
-  @SerialName("hits")
-  val patents: List<Patent>,
-)
-
-@Serializable
-class Patent(
-  val common: Common = Common(),
-  val biblio: Biblio = Biblio(),
-  val id: String = "Unknown",
-  val index: String = "Unknown",
-  val dataset: String = "Unknown",
-  val similarity: Double = 0.0,
-  @SerialName("similarity_norm")
-  val similarityNorm: Double = 0.0,
-  val snippet: Snippet = Snippet(),
-) {
-  @Serializable
-  class Common {
-    @SerialName("publishingOffice")
-    val publishingOffice: String = "Unknown"
-
-    @SerialName("documentNumber")
-    val documentNumber: String = "Unknown"
-    val kind: String = "Unknown"
-
-    @SerialName("publication_date")
-    val publicationDate: String = "2000.01.01"
-
-    val application: Application = Application()
-
-    @Serializable
-    class Application(
-      val number: String = "00000000000",
-      @SerialName("filing_date")
-      val filingDate: String = "2000.01.01",
-    )
-  }
-
-  @Serializable
-  class Biblio(
-    val ru: Ru = Ru(),
-    val en: En = En(),
-  ) {
-    @Serializable
-    class Ru(
-      val inventor: List<Inventor> = emptyList(),
-      val title: String = "Unknown",
-      val patentee: List<Patentee> = emptyList(),
-    ) {
-      @Serializable
-      class Inventor(
-        val name: String = "Unknown",
-      )
-
-      @Serializable
-      class Patentee(
-        val name: String = "Unknown",
-      )
-    }
-
-    @Serializable
-    class En(
-      val inventor: List<Inventor> = emptyList(),
-      val title: String = "Unknown",
-      val patentee: List<Patentee> = emptyList(),
-    ) {
-      @Serializable
-      class Inventor(
-        val name: String = "Unknown",
-      )
-
-      @Serializable
-      class Patentee(
-        val name: String = "Unknown",
-      )
-    }
-  }
-
-  @Serializable
-  class Snippet(
-    var title: String = "Unknown",
-    var description: String = "Unknown",
-    val lang: String = "Unknown",
-    val inventor: String = "Unknown",
-    val patentee: String = "Unknown",
-    val classification: Classification = Classification(),
-  ) {
-    @Serializable
-    class Classification(
-      val ipc: String = "Unknown",
-    ) {
-    }
-  }
-}
+import com.example.rospatent.classes.Patent
 
 
 @Composable
@@ -158,6 +59,10 @@ fun FoundScreen(
   onBack: () -> Unit,
   onSubmit: () -> Unit,
   patents: List<Patent>,
+  sortOption: String,
+  onSortOptionChange: (String) -> Unit,
+  onLoadMore: () -> Unit,
+  isEnd: Boolean,
 ) {
   var isSettings by rememberSaveable { mutableStateOf(false) }
   var isChosenPatent by rememberSaveable { mutableStateOf(false) }
@@ -174,14 +79,18 @@ fun FoundScreen(
           search = search,
           onSearchChange = onSearchChange,
           isSettings = isSettings,
-          onSettingsChange = { isSettings = it },
+          onSortScreenClose = { isSettings = it },
           onPatentChose = { patent ->
             chosenPatent = patent
             isChosenPatent = true
           },
           onBack = onBack,
           onSubmit = { onSubmit() },
-          patents = patents
+          patents = patents,
+          sortOption = sortOption,
+          onSortOptionChange = { onSortOptionChange(it) },
+          onLoadMore = onLoadMore,
+          isEnd = isEnd
         )
       }
 
@@ -193,7 +102,12 @@ fun FoundScreen(
 }
 
 @Composable
-fun SettingsScreen(modifier: Modifier = Modifier, onClose: () -> Unit) {
+fun SortScreen(
+  modifier: Modifier = Modifier,
+  onClose: () -> Unit,
+  sortOption: String,
+  onSortOptionChange: (String) -> Unit,
+) {
   Dialog(onDismissRequest = onClose) {
     Card(
       modifier = modifier.padding(horizontal = 20.dp)
@@ -205,44 +119,43 @@ fun SettingsScreen(modifier: Modifier = Modifier, onClose: () -> Unit) {
           .background(Color.White, shape = RoundedCornerShape(10.dp)),
         verticalArrangement = Arrangement.Center
       ) {
-        var selectedFilterOption by rememberSaveable { mutableStateOf("byRelevance") }
         FilterOption(
           text = stringResource(R.string.filter_option_by_relevance),
-          onClick = { selectedFilterOption = it },
-          selectedOption = selectedFilterOption,
-          optionValue = "byRelevance",
+          onClick = { onSortOptionChange(it) },
+          selectedOption = sortOption,
+          optionValue = "relevance",
         )
         FilterOption(text = stringResource(R.string.filter_option_by_publication_date),
-          onClick = { selectedFilterOption = it },
-          selectedOption = selectedFilterOption,
-          optionValue = "byPublicationDate:desc",
+          onClick = { onSortOptionChange(it) },
+          selectedOption = sortOption,
+          optionValue = "publication_date:desc",
           trailingIcon = {
             Icon(
               imageVector = Icons.Outlined.KeyboardArrowDown, contentDescription = null
             )
           })
         FilterOption(text = stringResource(R.string.filter_option_by_publication_date),
-          onClick = { selectedFilterOption = it },
-          selectedOption = selectedFilterOption,
-          optionValue = "byPublicationDate:asc",
+          onClick = { onSortOptionChange(it) },
+          selectedOption = sortOption,
+          optionValue = "publication_date:asc",
           trailingIcon = {
             Icon(
               imageVector = Icons.Outlined.KeyboardArrowUp, contentDescription = null
             )
           })
         FilterOption(text = stringResource(R.string.filter_option_by_filling_date),
-          onClick = { selectedFilterOption = it },
-          selectedOption = selectedFilterOption,
-          optionValue = "byApplicationDate:desc",
+          onClick = { onSortOptionChange(it) },
+          selectedOption = sortOption,
+          optionValue = "filing_date:desc",
           trailingIcon = {
             Icon(
               imageVector = Icons.Outlined.KeyboardArrowDown, contentDescription = null
             )
           })
         FilterOption(text = stringResource(R.string.filter_option_by_filling_date),
-          onClick = { selectedFilterOption = it },
-          selectedOption = selectedFilterOption,
-          optionValue = "byApplicationDate:asc",
+          onClick = { onSortOptionChange(it) },
+          selectedOption = sortOption,
+          optionValue = "filing_date:asc",
           trailingIcon = {
             Icon(
               imageVector = Icons.Outlined.KeyboardArrowUp, contentDescription = null
@@ -313,11 +226,15 @@ fun PatentsList(
   modifier: Modifier = Modifier, search: String,
   onSearchChange: (String) -> Unit,
   isSettings: Boolean,
-  onSettingsChange: (Boolean) -> Unit,
+  onSortScreenClose: (Boolean) -> Unit,
   onPatentChose: (Patent) -> Unit,
   onBack: () -> Unit,
   onSubmit: () -> Unit,
   patents: List<Patent>,
+  sortOption: String,
+  onSortOptionChange: (String) -> Unit,
+  onLoadMore: () -> Unit,
+  isEnd: Boolean,
 ) {
   Icon(modifier = Modifier
     .clickable { onBack() }
@@ -340,6 +257,11 @@ fun PatentsList(
           contentDescription = "clear search"
         )
       })
+    if (!isEnd) {
+      Button(onClick = { onLoadMore() }) {
+        Text(text = "Загрузить ещё")
+      }
+    }
     Row(
       modifier = Modifier
         .fillMaxWidth()
@@ -386,7 +308,7 @@ fun PatentsList(
         }
       }
       Icon(modifier = Modifier
-        .clickable { onSettingsChange(true) }
+        .clickable { onSortScreenClose(true) }
         .size(50.dp),
         imageVector = Icons.Outlined.Settings,
         contentDescription = "filter",
@@ -404,7 +326,11 @@ fun PatentsList(
     }
   }
 
-  if (isSettings) SettingsScreen(onClose = { onSettingsChange(false) })
+  if (isSettings) SortScreen(
+    onClose = { onSortScreenClose(false) },
+    onSortOptionChange = { onSortOptionChange(it) },
+    sortOption = sortOption
+  )
 }
 
 @Composable

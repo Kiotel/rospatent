@@ -45,13 +45,10 @@ import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
-import androidx.core.content.ContextCompat
 import androidx.core.splashscreen.SplashScreen.Companion.installSplashScreen
 import androidx.core.view.WindowCompat
 import com.example.rospatent.ui.theme.RospatentTheme
 import kotlinx.coroutines.launch
-import java.security.Permissions
-import kotlin.math.log
 
 class MainActivity : ComponentActivity() {
   override fun onCreate(savedInstanceState: Bundle?) {
@@ -76,13 +73,14 @@ private fun AppScreen(modifier: Modifier = Modifier, viewModel: AppViewModel = A
   var search by rememberSaveable { mutableStateOf("") }
   var isSearched by rememberSaveable { mutableStateOf(false) }
   val coroutineScope = rememberCoroutineScope()
+  var sortOption by rememberSaveable { mutableStateOf("relevance") }
   when (isSearched) {
     false -> MainScreen(modifier = modifier,
       search,
       onSearchChange = { search = it },
       onSubmit = {
         coroutineScope.launch {
-          viewModel.searchPatents(search)
+          viewModel.searchPatents(q = search, sort = sortOption)
           isSearched = true
         }
       })
@@ -93,7 +91,7 @@ private fun AppScreen(modifier: Modifier = Modifier, viewModel: AppViewModel = A
       onSearchChange = { search = it },
       onSubmit = {
         coroutineScope.launch {
-          viewModel.searchPatents(search)
+          viewModel.searchPatents(q = search, sort = sortOption)
           isSearched = false
           isSearched = true
         }
@@ -102,8 +100,26 @@ private fun AppScreen(modifier: Modifier = Modifier, viewModel: AppViewModel = A
       onBack = {
         isSearched = false
         search = ""
+        viewModel.clearPatents()
       },
-      patents = viewModel.patents
+      patents = viewModel.patents,
+      sortOption = sortOption,
+      onSortOptionChange = {
+        coroutineScope.launch {
+          sortOption = it
+          viewModel.searchPatents(q = search, sort = sortOption)
+          isSearched = false
+          isSearched = true
+        }
+      },
+      onLoadMore = {
+        coroutineScope.launch {
+          viewModel.loadMore()
+          isSearched = false
+          isSearched = true
+        }
+      },
+      isEnd = viewModel.isEnd
     )
   }
 }
