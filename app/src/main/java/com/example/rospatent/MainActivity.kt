@@ -74,16 +74,22 @@ private fun AppScreen(modifier: Modifier = Modifier, viewModel: AppViewModel = A
   var isSearched by rememberSaveable { mutableStateOf(false) }
   val coroutineScope = rememberCoroutineScope()
   var sortOption by rememberSaveable { mutableStateOf("relevance") }
+  var isLoading by rememberSaveable { mutableStateOf(false) }
   when (isSearched) {
-    false -> MainScreen(modifier = modifier,
+    false -> MainScreen(
+      modifier = modifier,
       search,
       onSearchChange = { search = it },
       onSubmit = {
         coroutineScope.launch {
+          isLoading = true
           viewModel.searchPatents(q = search, sort = sortOption)
           isSearched = true
+          isLoading = false
         }
-      })
+      },
+      isLoading = isLoading
+    )
 
     true -> FoundScreen(
       modifier = modifier.background(MaterialTheme.colorScheme.background),
@@ -91,9 +97,11 @@ private fun AppScreen(modifier: Modifier = Modifier, viewModel: AppViewModel = A
       onSearchChange = { search = it },
       onSubmit = {
         coroutineScope.launch {
+          isLoading = true
           viewModel.searchPatents(q = search, sort = sortOption)
           isSearched = false
           isSearched = true
+          isLoading = false
         }
 
       },
@@ -107,19 +115,24 @@ private fun AppScreen(modifier: Modifier = Modifier, viewModel: AppViewModel = A
       onSortOptionChange = {
         coroutineScope.launch {
           sortOption = it
+          isLoading = true
           viewModel.searchPatents(q = search, sort = sortOption)
           isSearched = false
           isSearched = true
+          isLoading = false
         }
       },
       onLoadMore = {
         coroutineScope.launch {
+          isLoading = true
           viewModel.loadMore()
           isSearched = false
           isSearched = true
+          isLoading = false
         }
       },
-      isEnd = viewModel.isEnd
+      isEnd = viewModel.isEnd,
+      isLoading = isLoading
     )
   }
 }
@@ -130,6 +143,7 @@ private fun MainScreen(
   search: String,
   onSearchChange: (String) -> Unit,
   onSubmit: () -> Unit,
+  isLoading: Boolean,
 ) {
   Column(
     modifier = modifier.fillMaxSize(), verticalArrangement = Arrangement.Bottom
@@ -151,14 +165,14 @@ private fun MainScreen(
       )
       Column(
         modifier = modifier
-          .align(if (isFocused) Alignment.Center else Alignment.BottomCenter)
+          .align(if (isFocused || isLoading) Alignment.Center else Alignment.BottomCenter)
           .padding(
-            bottom = if (isFocused) 200.dp else 100.dp
+            bottom = if (isFocused || isLoading) 200.dp else 100.dp
           )
           .fillMaxWidth(), horizontalAlignment = Alignment.CenterHorizontally
 
       ) {
-        AnimatedVisibility(!isFocused) {
+        AnimatedVisibility(!isFocused || isLoading) {
           Column(
             modifier = Modifier
               .fillMaxWidth()
@@ -176,9 +190,13 @@ private fun MainScreen(
             )
           }
         }
+        if (isLoading) {
+          Text(text = "Загрузка...")
+        }
         TextField(
+          enabled = !isLoading,
           search = search,
-          isDark = isFocused,
+          isDark = isFocused || isLoading,
           onSearchChange = { onSearchChange(it) },
           onSubmit = { onSubmit() },
           darkColors = OutlinedTextFieldDefaults.colors(
@@ -199,7 +217,7 @@ private fun MainScreen(
               modifier = Modifier.clickable(onClick = { onSubmit() }),
               imageVector = Icons.Outlined.Search,
               contentDescription = null,
-              tint = if (isFocused) Color.Gray else Color.White
+              tint = if (isFocused || isLoading) Color.Gray else Color.White
             )
           }
         )
@@ -208,7 +226,6 @@ private fun MainScreen(
   }
 }
 
-//TODO: Переделать это неоптимизированное говно
 @Composable
 fun keyboardAsState(): State<Boolean> {
   val isImeVisible = WindowInsets.ime.getBottom(LocalDensity.current) > 0
@@ -219,6 +236,7 @@ fun keyboardAsState(): State<Boolean> {
 fun TextField(
   modifier: Modifier = Modifier,
   search: String,
+  enabled: Boolean = true,
   onSearchChange: (String) -> Unit,
   onSubmit: () -> Unit,
   isDark: Boolean = false,
@@ -243,6 +261,7 @@ fun TextField(
     true -> darkColors
     false -> lightColors
   },
+    enabled = enabled,
     value = search,
     onValueChange = { onSearchChange(it) },
     keyboardActions = KeyboardActions(
