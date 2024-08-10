@@ -13,33 +13,30 @@ import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
-import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
+import androidx.compose.foundation.lazy.rememberLazyListState
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.outlined.KeyboardArrowLeft
-import androidx.compose.material.icons.outlined.ArrowDropDown
 import androidx.compose.material.icons.outlined.Check
 import androidx.compose.material.icons.outlined.Clear
 import androidx.compose.material.icons.outlined.KeyboardArrowDown
 import androidx.compose.material.icons.outlined.KeyboardArrowUp
-import androidx.compose.material.icons.outlined.Settings
 import androidx.compose.material3.Button
 import androidx.compose.material3.Card
-import androidx.compose.material3.DropdownMenu
-import androidx.compose.material3.DropdownMenuItem
 import androidx.compose.material3.Icon
+import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
-import androidx.compose.material3.OutlinedButton
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
+import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
@@ -49,12 +46,14 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.text.style.LineHeightStyle
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.em
 import androidx.compose.ui.unit.sp
 import androidx.compose.ui.window.Dialog
 import com.example.rospatent.classes.Patent
+import kotlinx.coroutines.launch
 
 @Composable
 fun FoundScreen(
@@ -68,6 +67,7 @@ fun FoundScreen(
   onSortOptionChange: (String) -> Unit,
   onLoadMore: () -> Unit,
   isEnd: Boolean,
+  isLoading: Boolean,
 ) {
   var isSettings by rememberSaveable { mutableStateOf(false) }
   var isChosenPatent by rememberSaveable { mutableStateOf(false) }
@@ -95,7 +95,8 @@ fun FoundScreen(
           sortOption = sortOption,
           onSortOptionChange = { onSortOptionChange(it) },
           onLoadMore = onLoadMore,
-          isEnd = isEnd
+          isEnd = isEnd,
+          isLoading = isLoading
         )
       }
 
@@ -103,9 +104,7 @@ fun FoundScreen(
         PatentResult(modifier = Modifier
           .padding(5.dp)
           .clip(shape = RoundedCornerShape(5.dp))
-          .background(Color.White),
-          patent = chosenPatent,
-          onBack = { isChosenPatent = false })
+          .background(Color.White), patent = chosenPatent, onBack = { isChosenPatent = false })
       }
     }
   }
@@ -213,11 +212,15 @@ fun FilterOption(
 @Composable
 fun PatentCard(modifier: Modifier = Modifier, patent: Patent) {
   Row(
-    modifier = modifier,
+    modifier = modifier.padding(horizontal = 10.dp),
     horizontalArrangement = Arrangement.Start,
     verticalAlignment = Alignment.CenterVertically,
   ) {
-    Icon(painter = painterResource(id = R.drawable.patent_list_icon), contentDescription = null)
+    Icon(
+      painter = painterResource(id = R.drawable.patent_list_icon),
+      contentDescription = null,
+      tint = Color.Unspecified
+    )
     Column(
       modifier = Modifier
         .fillMaxWidth()
@@ -226,9 +229,24 @@ fun PatentCard(modifier: Modifier = Modifier, patent: Patent) {
       Text(
         text = patent.biblio.ru.title, overflow = TextOverflow.Ellipsis, maxLines = 1
       )
+      var inventorName = ""
+      try {
+        inventorName =
+          patent.biblio.ru.inventor[0].name.split(" ")[0] + " " + patent.biblio.ru.inventor[0].name.split(
+            " "
+          )[1][0] + "." + patent.biblio.ru.inventor[0].name.split(" ")[2][0] + ". "
+      } catch (e: Exception) {
+        if (patent.biblio.ru.inventor.isNotEmpty()) {
+          patent.biblio.ru.inventor[0].name
+        }
+      }
       Row(horizontalArrangement = Arrangement.SpaceAround) {
-        Text(text = patent.biblio.ru.inventor[0].name, fontSize = 3.em)
-        Text(modifier = Modifier.padding(horizontal = 10.dp),text = patent.common.application.number, fontSize = 3.em)
+        Text(text = inventorName, fontSize = 3.em)
+        Text(
+          modifier = Modifier.padding(horizontal = 10.dp),
+          text = patent.common.application.number,
+          fontSize = 3.em
+        )
         Text(text = patent.snippet.classification.ipc, fontSize = 3.em)
       }
     }
@@ -249,6 +267,7 @@ fun PatentsList(
   onSortOptionChange: (String) -> Unit,
   onLoadMore: () -> Unit,
   isEnd: Boolean,
+  isLoading: Boolean,
 ) {
   Icon(modifier = Modifier
     .clickable { onBack() }
@@ -256,7 +275,10 @@ fun PatentsList(
     imageVector = Icons.AutoMirrored.Outlined.KeyboardArrowLeft,
     contentDescription = "back",
     tint = Color.Black)
-  Column(modifier = modifier.padding(horizontal = 20.dp, vertical = 0.dp)) {
+  Column(
+    modifier = modifier.padding(horizontal = 20.dp, vertical = 0.dp),
+    verticalArrangement = Arrangement.spacedBy(10.dp)
+  ) {
     TextField(modifier = Modifier
       .fillMaxWidth()
       .padding(top = 20.dp),
@@ -271,73 +293,62 @@ fun PatentsList(
           contentDescription = "clear search"
         )
       })
-    if (!isEnd) {
-      Button(onClick = { onLoadMore() }) {
-        Text(text = "Загрузить ещё")
-      }
-    }
-    Row(
+    Box(
       modifier = Modifier
         .fillMaxWidth()
         .padding(top = 10.dp),
-      horizontalArrangement = Arrangement.SpaceBetween
     ) {
-
-      var isDropDownMenuExpanded by rememberSaveable { mutableStateOf(false) }
-      var dropDownMenuSelection by rememberSaveable { mutableStateOf("option1") }
-      Box(modifier = Modifier.width(200.dp)) {
-        OutlinedButton(
-          onClick = { isDropDownMenuExpanded = true }, shape = RoundedCornerShape(10.dp)
-        ) {
-          Row(
-            modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceBetween
-          ) {
-            Text(text = dropDownMenuSelection)
-            Icon(imageVector = Icons.Outlined.ArrowDropDown, contentDescription = null)
-          }
-        }
-        DropdownMenu(expanded = isDropDownMenuExpanded,
-          onDismissRequest = { isDropDownMenuExpanded = false }) {
-          DropdownMenuItem(text = { Text("option1") }, onClick = {
-            dropDownMenuSelection = "option1"
-            isDropDownMenuExpanded = false
-          })
-          DropdownMenuItem(text = { Text("option2") }, onClick = {
-            dropDownMenuSelection = "option2"
-            isDropDownMenuExpanded = false
-          })
-          DropdownMenuItem(text = { Text("option3") }, onClick = {
-            dropDownMenuSelection = "option3"
-            isDropDownMenuExpanded = false
-          })
-          DropdownMenuItem(text = { Text("option4") }, onClick = {
-            dropDownMenuSelection = "option4"
-            isDropDownMenuExpanded = false
-          })
-          DropdownMenuItem(text = { Text("option5") }, onClick = {
-            dropDownMenuSelection = "option5"
-            isDropDownMenuExpanded = false
-          })
-        }
+      if (isLoading){
+        Text(modifier = Modifier.align(Alignment.Center),text = "Загрузка...")
       }
       Icon(modifier = Modifier
         .clickable { onSortScreenClose(true) }
-        .size(40.dp),
+        .size(40.dp)
+        .align(Alignment.CenterEnd),
         painter = painterResource(id = R.drawable.sort_options),
         contentDescription = "filter",
         tint = Color.Black)
     }
-    LazyColumn(verticalArrangement = Arrangement.spacedBy(3.dp)) {
-      items(items = patents) { patent ->
-        PatentCard(
-          modifier = Modifier
-            .height(50.dp)
-            .fillMaxWidth()
-            .clickable(onClick = { onPatentChose(patent) })
-            .clip(RoundedCornerShape(5.dp))
-            .background(Color.White),
-          patent = patent
-        )
+    Box(contentAlignment = Alignment.BottomCenter) {
+      val listState = rememberLazyListState()
+      LazyColumn(
+        modifier = Modifier
+          .clip(RoundedCornerShape(10.dp)),
+        state = listState,
+        verticalArrangement = Arrangement.spacedBy(3.dp)
+      ) {
+        items(items = patents) { patent ->
+          PatentCard(
+            modifier = Modifier
+              .height(50.dp)
+              .fillMaxWidth()
+              .clickable(onClick = { onPatentChose(patent) })
+              .clip(RoundedCornerShape(5.dp))
+              .background(Color.White), patent = patent
+          )
+        }
+      }
+      val coroutineScope = rememberCoroutineScope()
+      if (!listState.canScrollForward) {
+        if (!isEnd) {
+          Button(onClick = { onLoadMore() }, enabled = !isLoading) {
+            Text(
+              text = if (isLoading) {
+                stringResource(R.string.loading)
+              } else {
+                stringResource(R.string.load_more_button)
+              }
+            )
+          }
+        }
+        IconButton(
+          modifier = Modifier.align(Alignment.BottomEnd),
+          onClick = { coroutineScope.launch { listState.animateScrollToItem(1) } }) {
+          Icon(
+            imageVector = Icons.Outlined.KeyboardArrowUp,
+            contentDescription = stringResource(R.string.arrow_up)
+          )
+        }
       }
     }
   }

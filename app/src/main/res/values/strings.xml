@@ -3,4 +3,8 @@
     <string name="filter_option_by_filling_date">по дате регистрации</string>
     <string name="filter_option_by_relevance">по релевантности</string>
     <string name="filter_option_by_publication_date">по дате публикации</string>
+    <string name="arrow_up">arrow up</string>
+    <string name="load_more_button">Загрузить ещё</string>
+    <string name="nothing_more_button_message">Больше ничего нет...</string>
+    <string name="loading">Загрузка...</string>
 </resources>
