@@ -8,6 +8,7 @@ import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
+import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
@@ -43,17 +44,15 @@ import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.geometry.Size
+import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextOverflow
-import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.em
 import androidx.compose.ui.unit.sp
-import androidx.compose.ui.util.fastJoinToString
 import androidx.compose.ui.window.Dialog
 import com.example.rospatent.classes.Patent
 
@@ -84,7 +83,7 @@ fun FoundScreen(
         PatentsList(
           search = search,
           onSearchChange = onSearchChange,
-          isSettings = isSettings,
+          isSortOptionShowed = isSettings,
           onSortScreenClose = { isSettings = it },
           onPatentChose = { patent ->
             chosenPatent = patent
@@ -101,7 +100,10 @@ fun FoundScreen(
       }
 
       true -> {
-        PatentResult(modifier = Modifier.padding(15.dp),
+        PatentResult(modifier = Modifier
+          .padding(5.dp)
+          .clip(shape = RoundedCornerShape(5.dp))
+          .background(Color.White),
           patent = chosenPatent,
           onBack = { isChosenPatent = false })
       }
@@ -210,20 +212,24 @@ fun FilterOption(
 
 @Composable
 fun PatentCard(modifier: Modifier = Modifier, patent: Patent) {
-  Card(modifier = modifier) {
-    Row(
-      verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.Center
+  Row(
+    modifier = modifier,
+    horizontalArrangement = Arrangement.Start,
+    verticalAlignment = Alignment.CenterVertically,
+  ) {
+    Icon(painter = painterResource(id = R.drawable.patent_list_icon), contentDescription = null)
+    Column(
+      modifier = Modifier
+        .fillMaxWidth()
+        .padding(horizontal = 10.dp)
     ) {
-      Icon(painter = painterResource(id = R.drawable.patent_list_icon), contentDescription = null)
-      Column {
-        Text(
-          text = patent.biblio.ru.title, overflow = TextOverflow.Ellipsis, maxLines = 1
-        )
-        Row(horizontalArrangement = Arrangement.SpaceBetween) {
-          Text(text = patent.snippet.inventor, fontSize = 3.em)
-          Text(text = patent.common.application.number, fontSize = 3.em)
-          Text(text = patent.snippet.classification.ipc, fontSize = 3.em)
-        }
+      Text(
+        text = patent.biblio.ru.title, overflow = TextOverflow.Ellipsis, maxLines = 1
+      )
+      Row(horizontalArrangement = Arrangement.SpaceAround) {
+        Text(text = patent.biblio.ru.inventor[0].name, fontSize = 3.em)
+        Text(modifier = Modifier.padding(horizontal = 10.dp),text = patent.common.application.number, fontSize = 3.em)
+        Text(text = patent.snippet.classification.ipc, fontSize = 3.em)
       }
     }
   }
@@ -233,7 +239,7 @@ fun PatentCard(modifier: Modifier = Modifier, patent: Patent) {
 fun PatentsList(
   modifier: Modifier = Modifier, search: String,
   onSearchChange: (String) -> Unit,
-  isSettings: Boolean,
+  isSortOptionShowed: Boolean,
   onSortScreenClose: (Boolean) -> Unit,
   onPatentChose: (Patent) -> Unit,
   onBack: () -> Unit,
@@ -290,8 +296,7 @@ fun PatentsList(
             Icon(imageVector = Icons.Outlined.ArrowDropDown, contentDescription = null)
           }
         }
-        DropdownMenu(
-          expanded = isDropDownMenuExpanded,
+        DropdownMenu(expanded = isDropDownMenuExpanded,
           onDismissRequest = { isDropDownMenuExpanded = false }) {
           DropdownMenuItem(text = { Text("option1") }, onClick = {
             dropDownMenuSelection = "option1"
@@ -317,8 +322,8 @@ fun PatentsList(
       }
       Icon(modifier = Modifier
         .clickable { onSortScreenClose(true) }
-        .size(50.dp),
-        imageVector = Icons.Outlined.Settings,
+        .size(40.dp),
+        painter = painterResource(id = R.drawable.sort_options),
         contentDescription = "filter",
         tint = Color.Black)
     }
@@ -328,14 +333,16 @@ fun PatentsList(
           modifier = Modifier
             .height(50.dp)
             .fillMaxWidth()
-            .clickable(onClick = { onPatentChose(patent) }),
+            .clickable(onClick = { onPatentChose(patent) })
+            .clip(RoundedCornerShape(5.dp))
+            .background(Color.White),
           patent = patent
         )
       }
     }
   }
 
-  if (isSettings) SortScreen(
+  if (isSortOptionShowed) SortScreen(
     onClose = { onSortScreenClose(false) },
     onSortOptionChange = { onSortOptionChange(it) },
     sortOption = sortOption
@@ -355,17 +362,26 @@ fun PatentResult(
     imageVector = Icons.AutoMirrored.Outlined.KeyboardArrowLeft,
     contentDescription = "back",
     tint = Color.Black)
-  Column(modifier = modifier.verticalScroll(rememberScrollState())) {
+  Column(
+    modifier = modifier
+      .verticalScroll(rememberScrollState())
+      .padding(10.dp)
+  ) {
     Text(
-      patent.biblio.ru.title,
-      color = Color.Black,
-      fontWeight = FontWeight.Black
+      patent.biblio.ru.title, color = Color.Black, fontWeight = FontWeight.Black
     )
     Text(
       "Авторы: ${patent.biblio.ru.inventor.joinToString { inventor -> inventor.name }}",
       fontSize = 12.sp,
       color = Color.DarkGray,
       fontWeight = FontWeight.Light
+    )
+    Spacer(
+      modifier = Modifier
+        .height(5.dp)
+        .fillMaxWidth()
+        .clip(shape = RoundedCornerShape(5.dp))
+        .background(MaterialTheme.colorScheme.background)
     )
     Row(
       modifier = Modifier.fillMaxWidth(),
@@ -378,44 +394,41 @@ fun PatentResult(
           fontSize = 12.sp
         )
         Text(
-          text = patent.common.application.number, color = Color.Black,
+          text = patent.common.application.number, color = Color.Black, fontSize = 12.sp
+        )
+        Text(
+          text = "Дата подачи заявки:",
+          color = Color.Black,
+          fontWeight = FontWeight.Black,
           fontSize = 12.sp
         )
         Text(
-          text = "Дата подачи заявки:", color = Color.Black, fontWeight = FontWeight.Black,
-          fontSize = 12.sp
-        )
-        Text(
-          text = patent.common.application.filingDate, color = Color.Black,
-          fontSize = 12.sp
+          text = patent.common.application.filingDate, color = Color.Black, fontSize = 12.sp
         )
 
         AnimatedVisibility(isShowMore) {
           Column {
 
             Text(
-              text = "Приоритетные данные:", color = Color.Black, fontWeight = FontWeight.Black,
+              text = "Приоритетные данные:",
+              color = Color.Black,
+              fontWeight = FontWeight.Black,
               fontSize = 12.sp
             )
             Text(
-              text = patent.common.application.number, color = Color.Black,
-              fontSize = 12.sp
+              text = patent.common.application.number, color = Color.Black, fontSize = 12.sp
             )
             Text(
-              text = patent.snippet.lang, color = Color.Black,
-              fontSize = 12.sp
+              text = patent.snippet.lang, color = Color.Black, fontSize = 12.sp
             )
             Text(
-              text = patent.id, color = Color.Black,
-              fontSize = 12.sp
+              text = patent.id, color = Color.Black, fontSize = 12.sp
             )
             Text(
-              text = patent.common.kind, color = Color.Black,
-              fontSize = 12.sp
+              text = patent.common.kind, color = Color.Black, fontSize = 12.sp
             )
             Text(
-              text = patent.index, color = Color.Black,
-              fontSize = 12.sp
+              text = patent.index, color = Color.Black, fontSize = 12.sp
             )
           }
         }
@@ -425,8 +438,7 @@ fun PatentResult(
               "Скрыть"
             } else {
               "Показать больше"
-            }, color = Color.Black,
-            fontSize = 12.sp
+            }, color = Color.Black, fontSize = 12.sp
           )
         }
       }
@@ -436,27 +448,28 @@ fun PatentResult(
           .padding(start = 23.dp)
       ) {
         Text(
-          text = "Опубликовано:", color = Color.Black, fontWeight = FontWeight.Black,
+          text = "Опубликовано:",
+          color = Color.Black,
+          fontWeight = FontWeight.Black,
           fontSize = 12.sp
         )
         Text(
-          text = patent.common.publicationDate, color = Color.Black,
-          fontSize = 12.sp
+          text = patent.common.publicationDate, color = Color.Black, fontSize = 12.sp
         )
         Text(
-          text = "МПК:", color = Color.Black, fontWeight = FontWeight.Black,
-          fontSize = 12.sp
+          text = "МПК:", color = Color.Black, fontWeight = FontWeight.Black, fontSize = 12.sp
         )
         Text(
-          text = patent.snippet.classification.ipc, color = Color.Black,
-          fontSize = 12.sp
+          text = patent.snippet.classification.ipc, color = Color.Black, fontSize = 12.sp
         )
         AnimatedVisibility(isShowMore) {
           Column {
 
             Text(
-              text = "Патентообладатели:", color = Color.Black,
-              fontSize = 12.sp, fontWeight = FontWeight.Black
+              text = "Патентообладатели:",
+              color = Color.Black,
+              fontSize = 12.sp,
+              fontWeight = FontWeight.Black
             )
             Text(
               text = patent.biblio.ru.patentee.joinToString { patentee -> patentee.name },
@@ -467,14 +480,19 @@ fun PatentResult(
         }
       }
     }
+    Spacer(
+      modifier = Modifier
+        .height(5.dp)
+        .fillMaxWidth()
+        .clip(shape = RoundedCornerShape(5.dp))
+        .background(MaterialTheme.colorScheme.background)
+    )
     Column {
       Text(
-        text = "Описание", color = Color.Black,
-        fontSize = 12.sp
+        text = "Описание", color = Color.Black, fontSize = 12.sp
       )
       Text(
-        text = patent.snippet.description, color = Color.Black,
-        fontSize = 12.sp
+        text = patent.snippet.description, color = Color.Black, fontSize = 12.sp
       )
     }
   }
