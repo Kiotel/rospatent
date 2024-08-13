@@ -1,4 +1,5 @@
 import org.jetbrains.kotlin.ir.backend.js.deserializeDependencies
+import java.util.Properties
 
 plugins {
   alias(libs.plugins.android.application)
@@ -22,6 +23,10 @@ android {
     vectorDrawables {
       useSupportLibrary = true
     }
+
+    val properties = Properties()
+    properties.load(project.rootProject.file("local.properties").inputStream())
+    buildConfigField("String","api_key", properties.getProperty("api_key"))
   }
 
   buildTypes {
@@ -38,6 +43,7 @@ android {
     jvmTarget = "1.8"
   }
   buildFeatures {
+    buildConfig = true
     compose = true
   }
   composeOptions {

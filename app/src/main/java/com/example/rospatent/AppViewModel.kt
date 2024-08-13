@@ -1,5 +1,6 @@
 package com.example.rospatent
 
+import android.content.pm.ApplicationInfo
 import android.util.Log
 import androidx.lifecycle.ViewModel
 import com.example.rospatent.classes.Patent
@@ -17,8 +18,9 @@ import io.ktor.serialization.kotlinx.json.*
 import io.ktor.util.InternalAPI
 import kotlinx.serialization.json.Json
 import kotlin.properties.Delegates
+import com.example.rospatent.BuildConfig
 
-const val token = "26a213594e7f4f6e8cd89064d885ea93"
+val token = BuildConfig.api_key
 
 class AppViewModel : ViewModel() {
 
@@ -125,7 +127,7 @@ class AppViewModel : ViewModel() {
 
     val response = client.post("${url}search") {
       contentType(ContentType.Application.Json)
-      bearerAuth(token)
+        bearerAuth(token)
       setBody(json)
     }
 
