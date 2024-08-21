@@ -31,6 +31,7 @@ import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.State
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.livedata.observeAsState
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.runtime.rememberUpdatedState
@@ -47,6 +48,7 @@ import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.core.splashscreen.SplashScreen.Companion.installSplashScreen
 import androidx.core.view.WindowCompat
+import androidx.lifecycle.viewmodel.compose.viewModel
 import com.example.rospatent.ui.theme.RospatentTheme
 import kotlinx.coroutines.launch
 
@@ -60,7 +62,10 @@ class MainActivity : ComponentActivity() {
     setContent {
       RospatentTheme {
         Scaffold { innerPadding ->
-          AppScreen(modifier = Modifier.padding(innerPadding), viewModel = AppViewModel())
+          AppScreen(
+            modifier = Modifier.padding(innerPadding),
+            viewModel = AppViewModel()
+          )
         }
       }
     }
@@ -68,45 +73,39 @@ class MainActivity : ComponentActivity() {
 }
 
 @Composable
-private fun AppScreen(modifier: Modifier = Modifier, viewModel: AppViewModel = AppViewModel()) {
+private fun AppScreen(
+  modifier: Modifier = Modifier, viewModel: AppViewModel = viewModel()
+) {
 
   var search by rememberSaveable { mutableStateOf("") }
-  var isSearched by rememberSaveable { mutableStateOf(false) }
+  val isSearched by viewModel.isSearched.observeAsState()
   val coroutineScope = rememberCoroutineScope()
   var sortOption by rememberSaveable { mutableStateOf("relevance") }
-  var isLoading by rememberSaveable { mutableStateOf(false) }
-  when (isSearched) {
-    false -> MainScreen(
+  val isLoading by viewModel.isLoading.observeAsState()
+  val isEnd by viewModel.isEnd.observeAsState()
+  if (!isSearched!!) {
+    MainScreen(
       modifier = modifier,
       search,
       onSearchChange = { search = it },
       onSubmit = {
         coroutineScope.launch {
-          isLoading = true
           viewModel.searchPatents(q = search, sort = sortOption)
-          isSearched = true
-          isLoading = false
         }
       },
-      isLoading = isLoading
+      isLoading = isLoading!!
     )
-
-    true -> FoundScreen(
+  } else {
+    FoundScreen(
       modifier = modifier.background(MaterialTheme.colorScheme.background),
       search,
       onSearchChange = { search = it },
       onSubmit = {
         coroutineScope.launch {
-          isLoading = true
           viewModel.searchPatents(q = search, sort = sortOption)
-          isSearched = false
-          isSearched = true
-          isLoading = false
         }
-
       },
       onBack = {
-        isSearched = false
         search = ""
         viewModel.clearPatents()
       },
@@ -115,24 +114,16 @@ private fun AppScreen(modifier: Modifier = Modifier, viewModel: AppViewModel = A
       onSortOptionChange = {
         coroutineScope.launch {
           sortOption = it
-          isLoading = true
           viewModel.searchPatents(q = search, sort = sortOption)
-          isSearched = false
-          isSearched = true
-          isLoading = false
         }
       },
       onLoadMore = {
         coroutineScope.launch {
-          isLoading = true
           viewModel.loadMore()
-          isSearched = false
-          isSearched = true
-          isLoading = false
         }
       },
-      isEnd = viewModel.isEnd,
-      isLoading = isLoading
+      isEnd = isEnd!!,
+      isLoading = isLoading!!
     )
   }
 }
@@ -193,8 +184,7 @@ private fun MainScreen(
         if (isLoading) {
           Text(text = "Загрузка...")
         }
-        TextField(
-          enabled = !isLoading,
+        TextField(enabled = !isLoading,
           search = search,
           isDark = isFocused || isLoading,
           onSearchChange = { onSearchChange(it) },
@@ -219,8 +209,7 @@ private fun MainScreen(
               contentDescription = null,
               tint = if (isFocused || isLoading) Color.Gray else Color.White
             )
-          }
-        )
+          })
       }
     }
   }
@@ -257,16 +246,16 @@ fun TextField(
   trailingIcon: @Composable (() -> Unit)? = null,
   shape: Shape = RoundedCornerShape(10.dp),
 ) {
-  OutlinedTextField(modifier = modifier, colors = when (isDark) {
-    true -> darkColors
-    false -> lightColors
-  },
+  OutlinedTextField(
+    modifier = modifier,
+    colors = when (isDark) {
+      true -> darkColors
+      false -> lightColors
+    },
     enabled = enabled,
     value = search,
     onValueChange = { onSearchChange(it) },
-    keyboardActions = KeyboardActions(
-      onDone = { onSubmit() }
-    ),
+    keyboardActions = KeyboardActions(onDone = { onSubmit() }),
     singleLine = true,
     shape = shape,
     placeholder = {

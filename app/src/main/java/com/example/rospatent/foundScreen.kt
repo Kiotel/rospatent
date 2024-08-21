@@ -1,6 +1,7 @@
 package com.example.rospatent
 
 
+import androidx.activity.compose.BackHandler
 import androidx.compose.animation.AnimatedVisibility
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
@@ -46,7 +47,6 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontWeight
-import androidx.compose.ui.text.style.LineHeightStyle
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.em
@@ -76,6 +76,9 @@ fun FoundScreen(
       Patent()
     )
   }
+  BackHandler {
+    onBack()
+  }
   Column(modifier = modifier) {
     when (isChosenPatent) {
       false,
@@ -104,7 +107,9 @@ fun FoundScreen(
         PatentResult(modifier = Modifier
           .padding(5.dp)
           .clip(shape = RoundedCornerShape(5.dp))
-          .background(Color.White), patent = chosenPatent, onBack = { isChosenPatent = false })
+          .background(Color.White),
+          patent = chosenPatent,
+          onBack = { isChosenPatent = false })
       }
     }
   }
@@ -113,11 +118,14 @@ fun FoundScreen(
 @Composable
 fun SortScreen(
   modifier: Modifier = Modifier,
-  onClose: () -> Unit,
+  onBack: () -> Unit,
   sortOption: String,
   onSortOptionChange: (String) -> Unit,
 ) {
-  Dialog(onDismissRequest = onClose) {
+  BackHandler {
+    onBack()
+  }
+  Dialog(onDismissRequest = onBack) {
     Card(
       modifier = modifier.padding(horizontal = 20.dp)
     ) {
@@ -140,7 +148,8 @@ fun SortScreen(
           optionValue = "publication_date:desc",
           trailingIcon = {
             Icon(
-              imageVector = Icons.Outlined.KeyboardArrowDown, contentDescription = null
+              imageVector = Icons.Outlined.KeyboardArrowDown,
+              contentDescription = null
             )
           })
         FilterOption(text = stringResource(R.string.filter_option_by_publication_date),
@@ -149,7 +158,8 @@ fun SortScreen(
           optionValue = "publication_date:asc",
           trailingIcon = {
             Icon(
-              imageVector = Icons.Outlined.KeyboardArrowUp, contentDescription = null
+              imageVector = Icons.Outlined.KeyboardArrowUp,
+              contentDescription = null
             )
           })
         FilterOption(text = stringResource(R.string.filter_option_by_filling_date),
@@ -158,7 +168,8 @@ fun SortScreen(
           optionValue = "filing_date:desc",
           trailingIcon = {
             Icon(
-              imageVector = Icons.Outlined.KeyboardArrowDown, contentDescription = null
+              imageVector = Icons.Outlined.KeyboardArrowDown,
+              contentDescription = null
             )
           })
         FilterOption(text = stringResource(R.string.filter_option_by_filling_date),
@@ -167,7 +178,8 @@ fun SortScreen(
           optionValue = "filing_date:asc",
           trailingIcon = {
             Icon(
-              imageVector = Icons.Outlined.KeyboardArrowUp, contentDescription = null
+              imageVector = Icons.Outlined.KeyboardArrowUp,
+              contentDescription = null
             )
           })
       }
@@ -227,7 +239,9 @@ fun PatentCard(modifier: Modifier = Modifier, patent: Patent) {
         .padding(horizontal = 10.dp)
     ) {
       Text(
-        text = patent.biblio.ru.title, overflow = TextOverflow.Ellipsis, maxLines = 1
+        text = patent.biblio.ru.title,
+        overflow = TextOverflow.Ellipsis,
+        maxLines = 1
       )
       var inventorName = ""
       try {
@@ -298,8 +312,8 @@ fun PatentsList(
         .fillMaxWidth()
         .padding(top = 10.dp),
     ) {
-      if (isLoading){
-        Text(modifier = Modifier.align(Alignment.Center),text = "Загрузка...")
+      if (isLoading) {
+        Text(modifier = Modifier.align(Alignment.Center), text = "Загрузка...")
       }
       Icon(modifier = Modifier
         .clickable { onSortScreenClose(true) }
@@ -354,7 +368,7 @@ fun PatentsList(
   }
 
   if (isSortOptionShowed) SortScreen(
-    onClose = { onSortScreenClose(false) },
+    onBack = { onSortScreenClose(false) },
     onSortOptionChange = { onSortOptionChange(it) },
     sortOption = sortOption
   )
@@ -364,8 +378,11 @@ fun PatentsList(
 fun PatentResult(
   modifier: Modifier = Modifier,
   patent: Patent = Patent(),
-  onBack: () -> Unit = {},
+  onBack: () -> Unit,
 ) {
+  BackHandler {
+    onBack()
+  }
   var isShowMore by rememberSaveable { mutableStateOf(false) }
   Icon(modifier = Modifier
     .clickable { onBack() }
@@ -405,7 +422,9 @@ fun PatentResult(
           fontSize = 12.sp
         )
         Text(
-          text = patent.common.application.number, color = Color.Black, fontSize = 12.sp
+          text = patent.common.application.number,
+          color = Color.Black,
+          fontSize = 12.sp
         )
         Text(
           text = "Дата подачи заявки:",
@@ -414,7 +433,9 @@ fun PatentResult(
           fontSize = 12.sp
         )
         Text(
-          text = patent.common.application.filingDate, color = Color.Black, fontSize = 12.sp
+          text = patent.common.application.filingDate,
+          color = Color.Black,
+          fontSize = 12.sp
         )
 
         AnimatedVisibility(isShowMore) {
@@ -427,7 +448,9 @@ fun PatentResult(
               fontSize = 12.sp
             )
             Text(
-              text = patent.common.application.number, color = Color.Black, fontSize = 12.sp
+              text = patent.common.application.number,
+              color = Color.Black,
+              fontSize = 12.sp
             )
             Text(
               text = patent.snippet.lang, color = Color.Black, fontSize = 12.sp
@@ -465,13 +488,20 @@ fun PatentResult(
           fontSize = 12.sp
         )
         Text(
-          text = patent.common.publicationDate, color = Color.Black, fontSize = 12.sp
+          text = patent.common.publicationDate,
+          color = Color.Black,
+          fontSize = 12.sp
         )
         Text(
-          text = "МПК:", color = Color.Black, fontWeight = FontWeight.Black, fontSize = 12.sp
+          text = "МПК:",
+          color = Color.Black,
+          fontWeight = FontWeight.Black,
+          fontSize = 12.sp
         )
         Text(
-          text = patent.snippet.classification.ipc, color = Color.Black, fontSize = 12.sp
+          text = patent.snippet.classification.ipc,
+          color = Color.Black,
+          fontSize = 12.sp
         )
         AnimatedVisibility(isShowMore) {
           Column {

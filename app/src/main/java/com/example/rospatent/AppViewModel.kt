@@ -2,7 +2,11 @@ package com.example.rospatent
 
 import android.content.pm.ApplicationInfo
 import android.util.Log
+import android.view.translation.UiTranslationStateCallback
+import androidx.lifecycle.LiveData
+import androidx.lifecycle.MutableLiveData
 import androidx.lifecycle.ViewModel
+import androidx.lifecycle.liveData
 import com.example.rospatent.classes.Patent
 import com.example.rospatent.classes.RosPatentResponse
 import io.ktor.client.HttpClient
@@ -19,8 +23,9 @@ import io.ktor.util.InternalAPI
 import kotlinx.serialization.json.Json
 import kotlin.properties.Delegates
 import com.example.rospatent.BuildConfig
+import perfetto.protos.UiState
 
-val token = BuildConfig.api_key
+const val token = BuildConfig.api_key
 
 class AppViewModel : ViewModel() {
 
@@ -34,11 +39,15 @@ class AppViewModel : ViewModel() {
 
   private var _offset = 0
 
-  private var _isEnd: Boolean = true
-  val isEnd: Boolean
-    get() {
-      return _isEnd
-    }
+  val isSearched = MutableLiveData<Boolean>(false)
+
+  val isLoading = MutableLiveData<Boolean>(false)
+//  val isLoading: LiveData<Boolean>
+//    get() = _isLoading
+
+  private val _isEnd = MutableLiveData<Boolean>(false)
+  val isEnd: LiveData<Boolean>
+    get() = _isEnd
 
 
   val patents: List<Patent>
@@ -58,13 +67,14 @@ class AppViewModel : ViewModel() {
   fun clearPatents() {
     _patents = emptyList()
     _offset = 0
+    isSearched.value = false
   }
 
   suspend fun loadMore() {
     if (_available - _offset >= 100) {
       _offset += 50
     } else {
-      _isEnd = true
+      _isEnd.value = true
       return
     }
     _patents += makeRequest(
@@ -93,6 +103,8 @@ class AppViewModel : ViewModel() {
     limit: Int = 50,
     offset: Int = 0,
   ): List<Patent> {
+
+    isLoading.value = true
 
     _lastQuery = q
     _lastLang = lang
@@ -127,7 +139,7 @@ class AppViewModel : ViewModel() {
 
     val response = client.post("${url}search") {
       contentType(ContentType.Application.Json)
-        bearerAuth(token)
+      bearerAuth(token)
       setBody(json)
     }
 
@@ -140,11 +152,12 @@ class AppViewModel : ViewModel() {
 
     _available = responseJson.available
 
-    if (_available >= 50) {
+    if (_available > 50) {
       Log.d("->>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>", "Available")
-      _isEnd = false
-    }else {
+      _isEnd.value = false
+    } else {
       Log.d("->>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>", "Not Available")
+      _isEnd.value = true
     }
 
     Log.d("AppViewModel header", response.headers.toString())
@@ -162,10 +175,15 @@ class AppViewModel : ViewModel() {
       patent.snippet.title = patent.snippet.title.replace("<em>", "")
       patent.snippet.title = patent.snippet.title.replace("</em>", "")
 
-      patent.snippet.description = patent.snippet.description.replace("<em>", "")
-      patent.snippet.description = patent.snippet.description.replace("</em>", "")
+      patent.snippet.description =
+        patent.snippet.description.replace("<em>", "")
+      patent.snippet.description =
+        patent.snippet.description.replace("</em>", "")
     }
     // Log.d("PATENTS", patents.toString())
+
+    isLoading.value = false
+    isSearched.value = true
 
     return patents
   }

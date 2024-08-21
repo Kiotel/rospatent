@@ -58,6 +58,7 @@ android {
 }
 
 dependencies {
+  implementation(libs.androidx.lifecycle.viewmodel.compose)
   implementation(libs.ktor.serialization.kotlinx.json)
   implementation(libs.kotlinx.serialization.json)
   implementation(libs.ktor.ktor.client.content.negotiation)
@@ -76,6 +77,8 @@ dependencies {
   implementation(libs.androidx.ui.tooling.preview)
   implementation(libs.androidx.material3)
   implementation(libs.firebase.crashlytics.buildtools)
+  implementation(libs.androidx.runtime.livedata)
+  implementation(libs.androidx.benchmark.common)
   testImplementation(libs.junit)
   androidTestImplementation(libs.androidx.junit)
   androidTestImplementation(libs.androidx.espresso.core)
