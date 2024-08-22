@@ -52,222 +52,224 @@ import com.example.rospatent.ui.theme.RospatentTheme
 import kotlinx.coroutines.launch
 
 class MainActivity : ComponentActivity() {
-	override fun onCreate(savedInstanceState: Bundle?) {
-		super.onCreate(savedInstanceState)
-		installSplashScreen()
-		enableEdgeToEdge()
-		WindowCompat.setDecorFitsSystemWindows(window, false)
+    override fun onCreate(savedInstanceState: Bundle?) {
+        super.onCreate(savedInstanceState)
+        installSplashScreen()
+        enableEdgeToEdge()
+        WindowCompat.setDecorFitsSystemWindows(window, false)
 
-		setContent {
-			RospatentTheme {
-				Scaffold { innerPadding ->
-					AppScreen(
-						modifier = Modifier.padding(innerPadding),
-						viewModel = AppViewModel()
-					)
-				}
-			}
-		}
-	}
+        setContent {
+            RospatentTheme {
+                Scaffold { innerPadding ->
+                    AppScreen(
+                        modifier = Modifier.padding(innerPadding),
+                        viewModel = AppViewModel()
+                    )
+                }
+            }
+        }
+    }
 }
 
 @Composable
 private fun AppScreen(
-	modifier: Modifier = Modifier, viewModel: AppViewModel = viewModel()
+    modifier: Modifier = Modifier, viewModel: AppViewModel = viewModel()
 ) {
 
-	var search by rememberSaveable { mutableStateOf("") }
-	val isSearched by viewModel.isSearched.observeAsState()
-	val coroutineScope = rememberCoroutineScope()
-	var sortOption by rememberSaveable { mutableStateOf("relevance") }
-	val isLoading by viewModel.isLoading.observeAsState()
-	val isEnd by viewModel.isEnd.observeAsState()
-	if (!isSearched!!) {
-		MainScreen(
-			modifier = modifier,
-			search,
-			onSearchChange = { search = it },
-			onSubmit = {
-				coroutineScope.launch {
-					viewModel.searchPatents(q = search, sort = sortOption)
-				}
-			},
-			isLoading = isLoading!!
-		)
-	} else {
-		FoundScreen(
-			modifier = modifier.background(MaterialTheme.colorScheme.background),
-			search,
-			onSearchChange = { search = it },
-			onSubmit = {
-				coroutineScope.launch {
-					viewModel.searchPatents(q = search, sort = sortOption)
-				}
-			},
-			onBack = {
-				search = ""
-				viewModel.clearPatents()
-			},
-			patents = viewModel.patents,
-			sortOption = sortOption,
-			onSortOptionChange = {
-				coroutineScope.launch {
-					sortOption = it
-					viewModel.searchPatents(q = search, sort = sortOption)
-				}
-			},
-			onLoadMore = {
-				coroutineScope.launch {
-					viewModel.loadMore()
-				}
-			},
-			isEnd = isEnd!!,
-			isLoading = isLoading!!
-		)
-	}
+    var search by rememberSaveable { mutableStateOf("") }
+    val isSearched by viewModel.isSearched.observeAsState()
+    val coroutineScope = rememberCoroutineScope()
+    var sortOption by rememberSaveable { mutableStateOf("relevance") }
+    val isLoading by viewModel.isLoading.observeAsState()
+    val isEnd by viewModel.isEnd.observeAsState()
+    if (!isSearched!!) {
+        MainScreen(
+            modifier = modifier,
+            search,
+            onSearchChange = { search = it },
+            onSubmit = {
+                coroutineScope.launch {
+                    viewModel.searchPatents(q = search, sort = sortOption)
+                }
+            },
+            isLoading = isLoading!!
+        )
+    } else {
+        FoundScreen(
+            modifier = modifier.background(MaterialTheme.colorScheme.background),
+            search,
+            onSearchChange = { search = it },
+            onSubmit = {
+                coroutineScope.launch {
+                    viewModel.searchPatents(q = search, sort = sortOption)
+                }
+            },
+            onBack = {
+                search = ""
+                viewModel.clearPatents()
+            },
+            patents = viewModel.patents,
+            sortOption = sortOption,
+            onSortOptionChange = {
+                coroutineScope.launch {
+                    sortOption = it
+                    viewModel.searchPatents(q = search, sort = sortOption)
+                }
+            },
+            onLoadMore = {
+                coroutineScope.launch {
+                    viewModel.loadMore()
+                }
+            },
+            isEnd = isEnd!!,
+            isLoading = isLoading!!
+        )
+    }
 }
 
 @Composable
 private fun MainScreen(
-	modifier: Modifier = Modifier,
-	search: String,
-	onSearchChange: (String) -> Unit,
-	onSubmit: () -> Unit,
-	isLoading: Boolean,
+    modifier: Modifier = Modifier,
+    search: String,
+    onSearchChange: (String) -> Unit,
+    onSubmit: () -> Unit,
+    isLoading: Boolean,
 ) {
-	Column(
-		modifier = modifier.fillMaxSize(), verticalArrangement = Arrangement.Bottom
-	) {
-		val isFocused by keyboardAsState()
-		Text(
-			text = "Роспатент.",
-			color = Color.Black,
-			style = MaterialTheme.typography.titleLarge,
-			fontWeight = FontWeight.W500,
-			modifier = Modifier.padding(start = 30.dp, top = 15.dp)
-		)
-		Box {
-			Image(
-				painter = painterResource(id = R.drawable.search_screen_background),
-				contentDescription = null,
-				modifier = Modifier.fillMaxSize(),
-				alignment = Alignment.BottomCenter
-			)
-			Column(
-				modifier = modifier
-					.align(if (isFocused || isLoading) Alignment.Center else Alignment.BottomCenter)
-					.padding(
-						bottom = if (isFocused || isLoading) 200.dp else 100.dp
-					)
-					.fillMaxWidth(), horizontalAlignment = Alignment.CenterHorizontally
+    Column(
+        modifier = modifier.fillMaxSize(),
+        verticalArrangement = Arrangement.Bottom
+    ) {
+        val isFocused by keyboardAsState()
+        Text(
+            text = "Роспатент.",
+            color = Color.Black,
+            style = MaterialTheme.typography.titleLarge,
+            fontWeight = FontWeight.W500,
+            modifier = Modifier.padding(start = 30.dp, top = 15.dp)
+        )
+        Box {
+            Image(
+                painter = painterResource(id = R.drawable.search_screen_background),
+                contentDescription = null,
+                modifier = Modifier.fillMaxSize(),
+                alignment = Alignment.BottomCenter
+            )
+            Column(
+                modifier = modifier
+                    .align(if (isFocused || isLoading) Alignment.Center else Alignment.BottomCenter)
+                    .padding(
+                        bottom = if (isFocused || isLoading) 200.dp else 100.dp
+                    )
+                    .fillMaxWidth(),
+                horizontalAlignment = Alignment.CenterHorizontally
 
-			) {
-				AnimatedVisibility(!isFocused || isLoading) {
-					Column(
-						modifier = Modifier
-							.fillMaxWidth()
-							.padding(start = 30.dp, bottom = 40.dp)
-					) {
-						Text(
-							color = Color.White,
-							text = "Самый простой",
-							style = MaterialTheme.typography.headlineLarge,
-						)
-						Text(
-							color = Color.White,
-							text = "поиск патентов",
-							style = MaterialTheme.typography.headlineLarge,
-						)
-					}
-				}
-				if (isLoading) {
-					Text(text = "Загрузка...")
-				}
-				TextField(enabled = !isLoading,
-					search = search,
-					isDark = isFocused || isLoading,
-					onSearchChange = { onSearchChange(it) },
-					onSubmit = { onSubmit() },
-					darkColors = OutlinedTextFieldDefaults.colors(
-						focusedTextColor = Color.White,
-						unfocusedBorderColor = Color.White,
-						unfocusedPlaceholderColor = Color.White,
-						focusedBorderColor = Color.Gray,
-						focusedPlaceholderColor = Color.Gray,
-					),
-					lightColors = OutlinedTextFieldDefaults.colors(
-						focusedTextColor = Color.White,
-						unfocusedBorderColor = Color.White,
-						unfocusedPlaceholderColor = Color.White,
-						focusedBorderColor = Color.White,
-					),
-					trailingIcon = {
-						Icon(
-							modifier = Modifier.clickable(onClick = { onSubmit() }),
-							imageVector = Icons.Outlined.Search,
-							contentDescription = null,
-							tint = if (isFocused || isLoading) Color.Gray else Color.White
-						)
-					})
-			}
-		}
-	}
+            ) {
+                AnimatedVisibility(!isFocused || isLoading) {
+                    Column(
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .padding(start = 30.dp, bottom = 40.dp)
+                    ) {
+                        Text(
+                            color = Color.White,
+                            text = "Самый простой",
+                            style = MaterialTheme.typography.headlineLarge,
+                        )
+                        Text(
+                            color = Color.White,
+                            text = "поиск патентов",
+                            style = MaterialTheme.typography.headlineLarge,
+                        )
+                    }
+                }
+                if (isLoading) {
+                    Text(text = "Загрузка...")
+                }
+                TextField(enabled = !isLoading,
+                    search = search,
+                    isDark = isFocused || isLoading,
+                    onSearchChange = { onSearchChange(it) },
+                    onSubmit = { onSubmit() },
+                    darkColors = OutlinedTextFieldDefaults.colors(
+                        focusedTextColor = Color.White,
+                        unfocusedBorderColor = Color.White,
+                        unfocusedPlaceholderColor = Color.White,
+                        focusedBorderColor = Color.Gray,
+                        focusedPlaceholderColor = Color.Gray,
+                    ),
+                    lightColors = OutlinedTextFieldDefaults.colors(
+                        focusedTextColor = Color.White,
+                        unfocusedBorderColor = Color.White,
+                        unfocusedPlaceholderColor = Color.White,
+                        focusedBorderColor = Color.White,
+                    ),
+                    trailingIcon = {
+                        Icon(
+                            modifier = Modifier.clickable(onClick = { onSubmit() }),
+                            imageVector = Icons.Outlined.Search,
+                            contentDescription = null,
+                            tint = if (isFocused || isLoading) Color.Gray else Color.White
+                        )
+                    })
+            }
+        }
+    }
 }
 
 @Composable
 fun keyboardAsState(): State<Boolean> {
-	val isImeVisible = WindowInsets.ime.getBottom(LocalDensity.current) > 0
-	return rememberUpdatedState(isImeVisible)
+    val isImeVisible = WindowInsets.ime.getBottom(LocalDensity.current) > 0
+    return rememberUpdatedState(isImeVisible)
 }
 
 @Composable
 fun TextField(
-	modifier: Modifier = Modifier,
-	search: String,
-	enabled: Boolean = true,
-	onSearchChange: (String) -> Unit,
-	onSubmit: () -> Unit,
-	isDark: Boolean = false,
-	darkColors: TextFieldColors = OutlinedTextFieldDefaults.colors(
-		focusedTextColor = Color.DarkGray,
-		unfocusedBorderColor = Color.DarkGray,
-		unfocusedPlaceholderColor = Color.DarkGray,
-		focusedBorderColor = Color.DarkGray,
-		focusedPlaceholderColor = Color.DarkGray,
-	),
-	lightColors: TextFieldColors = OutlinedTextFieldDefaults.colors(
-		focusedTextColor = Color.White,
-		unfocusedBorderColor = Color.White,
-		unfocusedPlaceholderColor = Color.White,
-		focusedBorderColor = Color.White,
-		focusedPlaceholderColor = Color.White,
-	),
-	trailingIcon: @Composable (() -> Unit)? = null,
-	shape: Shape = RoundedCornerShape(10.dp),
+    modifier: Modifier = Modifier,
+    search: String,
+    enabled: Boolean = true,
+    onSearchChange: (String) -> Unit,
+    onSubmit: () -> Unit,
+    isDark: Boolean = false,
+    darkColors: TextFieldColors = OutlinedTextFieldDefaults.colors(
+        focusedTextColor = Color.DarkGray,
+        unfocusedBorderColor = Color.DarkGray,
+        unfocusedPlaceholderColor = Color.DarkGray,
+        focusedBorderColor = Color.DarkGray,
+        focusedPlaceholderColor = Color.DarkGray,
+    ),
+    lightColors: TextFieldColors = OutlinedTextFieldDefaults.colors(
+        focusedTextColor = Color.White,
+        unfocusedBorderColor = Color.White,
+        unfocusedPlaceholderColor = Color.White,
+        focusedBorderColor = Color.White,
+        focusedPlaceholderColor = Color.White,
+    ),
+    trailingIcon: @Composable (() -> Unit)? = null,
+    shape: Shape = RoundedCornerShape(10.dp),
 ) {
-	OutlinedTextField(
-		modifier = modifier,
-		colors = when (isDark) {
-			true -> darkColors
-			false -> lightColors
-		},
-		enabled = enabled,
-		value = search,
-		onValueChange = { onSearchChange(it) },
-		keyboardActions = KeyboardActions(onDone = { onSubmit() }),
-		singleLine = true,
-		shape = shape,
-		placeholder = {
-			Text(text = "Искать патент")
-		},
-		trailingIcon = trailingIcon
-	)
+    OutlinedTextField(
+        modifier = modifier,
+        colors = when (isDark) {
+            true -> darkColors
+            false -> lightColors
+        },
+        enabled = enabled,
+        value = search,
+        onValueChange = { onSearchChange(it) },
+        keyboardActions = KeyboardActions(onDone = { onSubmit() }),
+        singleLine = true,
+        shape = shape,
+        placeholder = {
+            Text(text = "Искать патент")
+        },
+        trailingIcon = trailingIcon
+    )
 }
 
 @Preview
 @Composable
 fun AppPreview() {
-	Scaffold { innerPadding ->
-		AppScreen(modifier = Modifier.padding(innerPadding))
-	}
+    Scaffold { innerPadding ->
+        AppScreen(modifier = Modifier.padding(innerPadding))
+    }
 }

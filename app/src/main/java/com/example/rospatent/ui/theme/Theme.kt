@@ -8,29 +8,29 @@ import com.google.accompanist.systemuicontroller.rememberSystemUiController
 
 
 private val colorScheme = lightColorScheme(
-  primary = Blue,
-  secondary = BrightBlue,
-  tertiary = DarkBlue,
-	background = VeryBrightBLue
+    primary = Blue,
+    secondary = BrightBlue,
+    tertiary = DarkBlue,
+    background = VeryBrightBLue
 
 )
 
 @Composable
 fun RospatentTheme(
-  // Dynamic color is available on Android 12+
-  content: @Composable () -> Unit,
+    // Dynamic color is available on Android 12+
+    content: @Composable () -> Unit,
 ) {
-  val colorScheme = colorScheme
+    val colorScheme = colorScheme
 
-  val systemUiController = rememberSystemUiController()
+    val systemUiController = rememberSystemUiController()
 
-  systemUiController.setSystemBarsColor(
-    color = Color.Transparent,
-    darkIcons = true
-  )
-  MaterialTheme(
-    colorScheme = colorScheme,
-    typography = Typography,
-    content = content
-  )
+    systemUiController.setSystemBarsColor(
+        color = Color.Transparent,
+        darkIcons = true
+    )
+    MaterialTheme(
+        colorScheme = colorScheme,
+        typography = Typography,
+        content = content
+    )
 }
